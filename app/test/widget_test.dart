@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:optimizador_pro/app.dart';
+import 'package:optimizador_pro/features/battery/battery_screen.dart';
 import 'package:optimizador_pro/domain/models.dart';
 import 'package:optimizador_pro/platform/demo_agent.dart';
 import 'package:optimizador_pro/state/providers.dart';
@@ -69,7 +70,14 @@ void main() {
     expect(find.text('Activado: el móvil va más lento'), findsOneWidget);
     expect(find.text('Ajuste de Xiaomi'), findsOneWidget);
     expect(find.text('Permitir'), findsOneWidget);
-    expect(find.text('Margen antes de que el móvil se frene: 58 %'), findsOneWidget);
+    // La tarjeta de temperatura queda por debajo de la pantalla de prueba (800×600): se desplaza.
+    final margin = find.text('Margen antes de que el móvil se frene: 58 %');
+    await tester.scrollUntilVisible(
+      margin,
+      300,
+      scrollable: find.descendant(of: find.byType(BatteryScreen), matching: find.byType(Scrollable)),
+    );
+    expect(margin, findsOneWidget);
   });
 
   testWidgets('juegos: modo automático y partida en vivo', (tester) async {
