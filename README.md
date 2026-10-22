@@ -60,6 +60,13 @@ se instala encima de la anterior.
 Ejecución manual: Actions › «APK de Android» › Run workflow permite elegir el sabor `full`
 (con Shizuku, por defecto) o `play` (solo APIs públicas).
 
+## Instalar en Windows
+
+`.github/workflows/windows-exe.yml` compila un instalador con la app y el servicio:
+`https://github.com/<usuario>/<repo>/releases/download/ultima-windows/Optimizador-Pro-Setup.exe`.
+Pide permisos de administrador (registra el servicio `OptimizadorPro`). No está firmado, así que
+SmartScreen puede avisar: «Más información» › «Ejecutar de todas formas».
+
 ## Puesta en marcha (desarrollo)
 
 Requisitos: Rust estable, Flutter 3.47.7 (la que usa la CI), JDK 17 y Android SDK (para

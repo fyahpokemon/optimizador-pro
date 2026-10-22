@@ -1,0 +1,145 @@
+# Compila el instalador de Windows (.exe) y lo publica para descargarlo.
+#
+# - Cada push a `main` actualiza la pre-release «ultima-windows». Enlace fijo:
+#   https://github.com/<usuario>/<repo>/releases/download/ultima-windows/Optimizador-Pro-Setup.exe
+# - Cada etiqueta `vX.Y.Z` añade el instalador a la Release de esa versión.
+# - Siempre se guarda también como artefacto del run (30 días).
+#
+# El instalador incluye la app (Flutter) y el servicio con privilegios (Rust) que aplica
+# los ajustes; pide permisos de administrador al instalar.
+name: Instalador de Windows
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # publicar la Release
+
+concurrency:
+  group: exe-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.7'
+  FRB_VERSION: '2.11.1'
+
+jobs:
+  exe:
+    name: Compilar instalador
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: windows
+
+      - uses: cargo-bins/cargo-binstall@main
+
+      - name: Generador de bindings
+        run: cargo binstall --no-confirm "flutter_rust_bridge_codegen@${FRB_VERSION}"
+
+      - name: Servicio de Windows (Rust)
+        run: cargo build -p optimizador-service --release
+
+      - name: Proyecto Windows (añade solo los archivos que falten)
+        working-directory: app
+        run: flutter create --platforms=windows --org com.optimizadorpro --project-name optimizador_pro .
+
+      - name: Dependencias y bindings
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter_rust_bridge_codegen generate
+
+      - name: Versión
+        id: version
+        run: |
+          base=$(grep -E '^version:' app/pubspec.yaml | sed -E 's/^version: *([0-9.]+).*/\1/')
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then name="${GITHUB_REF_NAME#v}"; else name="$base"; fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Compilar app de Windows
+        working-directory: app
+        run: |
+          flutter build windows --release \
+            --build-name="${{ steps.version.outputs.name }}" \
+            --build-number="${{ github.run_number }}"
+
+      - name: PresentMon (medición de FPS, licencia MIT)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist/service/bin
+          # Opcional: sin PresentMon la app funciona, pero no mide FPS.
+          if gh release download --repo GameTechDev/PresentMon --pattern 'PresentMon-*-x64.exe' --dir "$RUNNER_TEMP/pm"; then
+            for f in "$RUNNER_TEMP"/pm/*.exe; do cp "$f" dist/service/bin/PresentMon.exe; break; done
+          else
+            echo "::warning::No se pudo descargar PresentMon; el instalador no medirá FPS."
+          fi
+
+      - name: Preparar archivos
+        run: |
+          mkdir -p dist/app dist/service
+          cp -r app/build/windows/x64/runner/Release/. dist/app/
+          cp target/release/optimizador-service.exe dist/service/
+          find dist -maxdepth 2
+
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+
+      - name: Crear instalador
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=${{ steps.version.outputs.name }}" installer\windows\optimizador-pro.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-FileHash dist\Optimizador-Pro-Setup.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  Optimizador-Pro-Setup.exe" } | Out-File -Encoding ascii dist\SHA256SUMS-windows.txt
+
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: Optimizador-Pro-Setup-${{ steps.version.outputs.name }}
+          path: |
+            dist/Optimizador-Pro-Setup.exe
+            dist/SHA256SUMS-windows.txt
+          retention-days: 30
+
+      - name: Publicar en la Release de la versión (etiqueta vX.Y.Z)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Optimizador Pro ${{ steps.version.outputs.name }}
+          files: |
+            dist/Optimizador-Pro-Setup.exe
+            dist/SHA256SUMS-windows.txt
+
+      - name: Publicar «ultima-windows» (rama main)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete ultima-windows --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+          gh release create ultima-windows dist/Optimizador-Pro-Setup.exe dist/SHA256SUMS-windows.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Última compilación Windows · ${{ steps.version.outputs.name }} (#${{ github.run_number }})" \
+            --notes "Instalador compilado automáticamente desde \`${GITHUB_SHA::7}\`. Pide permisos de administrador para instalar el servicio de optimización. Al no estar firmado, Windows SmartScreen puede avisar: «Más información» › «Ejecutar de todas formas»."
