@@ -11,7 +11,7 @@ if [ "$code" -ne 0 ]; then
   # Líneas útiles: errores de rustc/cargo, Gradle, Dart y Flutter, con algo de contexto.
   # Sin colores ANSI, que ensucian la anotación.
   sed -i -E 's/\x1B\[[0-9;]*[A-Za-z]//g' "$log"
-  msg=$(grep -nE -A3 'error(\[E[0-9]+\])?:|^e: |FAILURE|What went wrong|Exception|Error:|error •|warning •|Unhandled|not found|panicked' "$log" \
+  msg=$(grep -nE -A3 'error(\[E[0-9]+\])?:|^e: |FAILURE|What went wrong|Exception|Error:|error •|warning •|Expected:|Actual:|Which:|EXCEPTION CAUGHT|Test failed|\[E\]|Unhandled|not found|panicked' "$log" \
         | head -n 80 | cut -c1-300)
   [ -z "$msg" ] && msg=$(tail -n 60 "$log" | cut -c1-300)
   # Formato de anotación: los saltos de línea se codifican como %0A.
