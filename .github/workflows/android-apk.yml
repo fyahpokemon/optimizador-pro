@@ -27,6 +27,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  CARGO_TERM_COLOR: never
   FLUTTER_VERSION: '3.47.7'
   FRB_VERSION: '2.11.1'
   AGENT_FLAVOR: ${{ inputs.flavor || 'full' }}

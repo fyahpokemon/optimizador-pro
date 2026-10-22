@@ -4,6 +4,7 @@
 //! (flutter_rust_bridge), al servicio de Windows (named pipe) y al módulo de Android.
 
 pub mod api;
+mod engine;
 pub use api::*;
 pub use model;
 

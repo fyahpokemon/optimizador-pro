@@ -6,7 +6,8 @@ import 'providers.dart';
 /// El agente como [MobileExtras], o null en escritorio (no hay pestañas de Juegos/Batería).
 final mobileExtrasProvider = Provider<MobileExtras?>((ref) {
   final agent = ref.watch(agentProvider);
-  return agent is MobileExtras ? agent : null;
+  // Cast explícito: la condicional sola se infiere como OptimizerAgent?, no MobileExtras?.
+  return agent is MobileExtras ? agent as MobileExtras : null;
 });
 
 /// En `build` y en providers: watch. En métodos de notifiers: read (regla de Riverpod).
