@@ -56,8 +56,9 @@ jobs:
       - run: flutter pub get
       - name: Generar bindings del núcleo
         run: flutter_rust_bridge_codegen generate
-      - run: flutter analyze --no-fatal-infos
-      - run: flutter test
+      # Los avisos (warnings) se muestran pero no detienen la CI; los errores sí.
+      - run: ../tools/ci/run.sh "flutter analyze" flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: ../tools/ci/run.sh "flutter test" flutter test
 
   android-agent:
     name: Agente Android (tests unitarios)

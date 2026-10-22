@@ -56,7 +56,7 @@ jobs:
         run: cargo binstall --no-confirm "flutter_rust_bridge_codegen@${FRB_VERSION}"
 
       - name: Servicio de Windows (Rust)
-        run: cargo build -p optimizador-service --release
+        run: tools/ci/run.sh "Servicio de Windows" cargo build -p optimizador-service --release
 
       - name: Proyecto Windows (añade solo los archivos que falten)
         working-directory: app
@@ -78,7 +78,7 @@ jobs:
       - name: Compilar app de Windows
         working-directory: app
         run: |
-          flutter build windows --release \
+          ../tools/ci/run.sh "flutter build windows" flutter build windows --release \
             --build-name="${{ steps.version.outputs.name }}" \
             --build-number="${{ github.run_number }}"
 
