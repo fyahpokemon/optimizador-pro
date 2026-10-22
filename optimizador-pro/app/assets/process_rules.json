@@ -1,0 +1,28 @@
+{
+  "_comment": "Listas mantenidas por el equipo. whitelist: nunca tocar. known_heavy: lastre habitual que se frena (prioridad baja / EcoQoS / restricción de fondo), nunca se mata.",
+  "bg_cpu_threshold_pct": 5.0,
+  "whitelist": [
+    "System", "Registry", "smss.exe", "csrss.exe", "wininit.exe", "winlogon.exe",
+    "services.exe", "lsass.exe", "svchost.exe", "dwm.exe", "explorer.exe",
+    "fontdrvhost.exe", "audiodg.exe", "ctfmon.exe", "sihost.exe",
+    "MsMpEng.exe", "NisSrv.exe", "SecurityHealthService.exe",
+    "nvcontainer.exe", "NVDisplay.Container.exe", "atiesrxx.exe", "atieclxx.exe", "RadeonSoftware.exe",
+    "igfxEM.exe", "RtkAudUService64.exe",
+    "EasyAntiCheat.exe", "EasyAntiCheat_EOS.exe", "BEService.exe", "vgc.exe", "FACEIT.exe",
+    "Narrator.exe", "Magnify.exe", "osk.exe",
+    "Discord.exe", "obs64.exe",
+    "com.android.systemui", "com.google.android.inputmethod.latin", "com.google.android.gms",
+    "com.android.phone", "com.google.android.apps.accessibility.voiceaccess",
+    "com.google.android.marvin.talkback", "com.discord"
+  ],
+  "known_heavy": [
+    "OneDrive.exe", "Dropbox.exe", "GoogleDriveFS.exe",
+    "AdobeUpdateService.exe", "AdobeARM.exe", "CCXProcess.exe", "Creative Cloud.exe",
+    "MicrosoftEdgeUpdate.exe", "GoogleUpdate.exe", "SearchIndexer.exe",
+    "Teams.exe", "ms-teams.exe", "Spotify.exe", "EpicGamesLauncher.exe",
+    "steamwebhelper.exe", "Battle.net.exe", "EADesktop.exe", "upc.exe",
+    "PhoneExperienceHost.exe", "YourPhone.exe", "WidgetService.exe",
+    "com.facebook.katana", "com.instagram.android", "com.zhiliaoapp.musically",
+    "com.google.android.apps.photos", "com.dropbox.android", "com.microsoft.skydrive"
+  ]
+}

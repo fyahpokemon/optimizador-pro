@@ -1,0 +1,25 @@
+[package]
+name = "optimizador_core"
+description = "Superficie del núcleo expuesta a Flutter (flutter_rust_bridge) y a los agentes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+# cdylib: Android (.so) y Windows (.dll) cargados por Flutter; rlib: tests y agentes.
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+model = { workspace = true, features = ["serde"] }
+rules = { workspace = true, features = ["serde"] }
+scoring = { workspace = true, features = ["serde"] }
+stutter = { workspace = true, features = ["serde"] }
+profiles = { workspace = true, features = ["serde"] }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+flutter_rust_bridge = { version = "=2.11.1", optional = true }
+
+[features]
+# Lo activa la build de Flutter (rust_builder) tras `flutter_rust_bridge_codegen generate`.
+frb = ["dep:flutter_rust_bridge"]

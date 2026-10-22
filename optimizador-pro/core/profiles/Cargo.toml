@@ -1,0 +1,16 @@
+[package]
+name = "profiles"
+description = "Perfiles por nivel de hardware y controlador adaptativo del modo juego"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["serde"]
+serde = ["dep:serde", "model/serde", "rules/serde", "stutter/serde"]
+
+[dependencies]
+model.workspace = true
+rules.workspace = true
+stutter.workspace = true
+serde = { workspace = true, optional = true }

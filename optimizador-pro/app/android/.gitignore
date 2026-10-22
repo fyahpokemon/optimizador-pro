@@ -1,0 +1,17 @@
+# Generado por `flutter create` / Gradle en cada máquina
+gradle-wrapper.jar
+/.gradle
+/captures/
+/gradlew
+/gradlew.bat
+/local.properties
+GeneratedPluginRegistrant.java
+.cxx/
+
+# Bibliotecas del núcleo en Rust (las compila el flujo con cargo-ndk)
+app/src/main/jniLibs/
+
+# Claves de firma: nunca en el repositorio
+key.properties
+**/*.keystore
+**/*.jks

@@ -1,0 +1,14 @@
+/target/
+**/build/
+.dart_tool/
+.packages
+app/.flutter-plugins*
+app/lib/bridge/
+*.iml
+.idea/
+.vscode/
+local.properties
+.gradle/
+*.db
+*.db-wal
+*.db-shm

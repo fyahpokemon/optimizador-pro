@@ -1,0 +1,19 @@
+{
+  "_comment": "Juegos conocidos para la detección automática. Complementa la detección por categoría (Android) y por uso de GPU en primer plano (Windows). Se actualiza sin publicar versión.",
+  "windows_exe": [
+    "cs2.exe", "dota2.exe", "VALORANT-Win64-Shipping.exe", "FortniteClient-Win64-Shipping.exe",
+    "r5apex.exe", "r5apex_dx12.exe", "GTA5.exe", "GTA5_Enhanced.exe", "RDR2.exe", "eldenring.exe",
+    "Overwatch.exe", "RocketLeague.exe", "Minecraft.Windows.exe", "League of Legends.exe",
+    "Cyberpunk2077.exe", "bg3.exe", "bg3_dx11.exe", "cod.exe", "RainbowSix.exe", "PUBG-Win64-Shipping.exe",
+    "destiny2.exe", "Warframe.x64.exe", "GenshinImpact.exe", "StarRail.exe", "FC25.exe", "EAFC26.exe",
+    "helldivers2.exe", "MonsterHunterWilds.exe", "Palworld-Win64-Shipping.exe", "witcher3.exe"
+  ],
+  "android_packages": [
+    "com.tencent.ig", "com.pubg.imobile", "com.pubg.krmobile", "com.activision.callofduty.shooter",
+    "com.activision.callofduty.warzone", "com.miHoYo.GenshinImpact", "com.HoYoverse.hkrpgoversea",
+    "com.mobile.legends", "com.garena.game.freefire", "com.dts.freefireth", "com.dts.freefiremax",
+    "com.supercell.clashroyale", "com.supercell.brawlstars", "com.supercell.clashofclans",
+    "com.roblox.client", "com.mojang.minecraftpe", "com.ea.gp.fifamobile", "com.riotgames.league.wildrift",
+    "com.levelinfinite.sgameGlobal", "com.netease.newspike", "com.kurogame.wutheringwaves.global"
+  ]
+}

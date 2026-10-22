@@ -1,0 +1,15 @@
+[package]
+name = "rules"
+description = "Motor de reglas: Snapshot -> problemas diagnosticados con su arreglo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["serde"]
+serde = ["dep:serde", "dep:serde_json", "model/serde"]
+
+[dependencies]
+model.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }

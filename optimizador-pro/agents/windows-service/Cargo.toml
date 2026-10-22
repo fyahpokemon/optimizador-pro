@@ -1,0 +1,39 @@
+[package]
+name = "optimizador-service"
+description = "Servicio de Windows con privilegios: sensores, ajustes y medición de frametimes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "optimizador-service"
+path = "src/main.rs"
+
+[dependencies]
+model = { workspace = true, features = ["serde"] }
+journal.workspace = true
+optimizador_core = { path = "../../core/api" }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.7"
+sysinfo = "0.32"
+walkdir = "2"
+wmi = "0.14"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Pipes",
+    "Win32_System_Power",
+    "Win32_System_Threading",
+    "Win32_System_Performance",
+    "Win32_System_Memory",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_IO",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Registry", # HKEY: lo exigen PowerGetActiveScheme / PowerSetActiveScheme
+] }

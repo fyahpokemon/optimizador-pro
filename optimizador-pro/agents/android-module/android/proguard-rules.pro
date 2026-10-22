@@ -1,0 +1,2 @@
+-keep class com.optimizadorpro.agent.shizuku.** { *; }
+-keep class rikka.shizuku.** { *; }

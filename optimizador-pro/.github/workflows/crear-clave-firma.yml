@@ -1,0 +1,57 @@
+# Ejecutar UNA sola vez (Actions › «Crear clave de firma» › Run workflow).
+#
+# Genera la clave con la que se firmarán todas las APK. Con la misma clave siempre, cada
+# versión nueva se instala encima de la anterior sin desinstalar ni perder ajustes.
+#
+# El resultado es un artefacto que dura 1 día con los cuatro valores a copiar en
+# Settings › Secrets and variables › Actions. Después, borra el artefacto.
+name: Crear clave de firma
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clave:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generar clave
+        run: |
+          PASS=$(openssl rand -base64 32 | tr -dc 'A-Za-z0-9' | cut -c1-28)
+          echo "::add-mask::$PASS"
+          keytool -genkeypair -noprompt \
+            -keystore release.jks -storetype PKCS12 \
+            -alias optimizador -keyalg RSA -keysize 4096 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" \
+            -dname "CN=Optimizador Pro"
+          mkdir -p clave
+          base64 -w0 release.jks > clave/ANDROID_KEYSTORE_BASE64.txt
+          printf '%s' "$PASS" > clave/ANDROID_KEYSTORE_PASSWORD.txt
+          printf 'optimizador' > clave/ANDROID_KEY_ALIAS.txt
+          cp release.jks clave/copia-de-seguridad-release.jks
+          cat > clave/LEEME.txt <<'EOF'
+          Crea estos secretos en GitHub (Settings > Secrets and variables > Actions >
+          New repository secret), copiando el contenido de cada archivo:
+
+            ANDROID_KEYSTORE_BASE64    <- ANDROID_KEYSTORE_BASE64.txt
+            ANDROID_KEYSTORE_PASSWORD  <- ANDROID_KEYSTORE_PASSWORD.txt
+            ANDROID_KEY_ALIAS          <- ANDROID_KEY_ALIAS.txt
+
+          Guarda copia-de-seguridad-release.jks y la contraseña en un lugar seguro:
+          si se pierden, las próximas APK no se podrán instalar encima de las actuales.
+          Cuando termines, borra este artefacto en la página del run.
+          EOF
+
+      - name: Entregar como artefacto (1 día)
+        uses: actions/upload-artifact@v4
+        with:
+          name: clave-de-firma
+          path: clave/
+          retention-days: 1

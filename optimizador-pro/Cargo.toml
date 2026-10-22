@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    "core/model",
+    "core/rules",
+    "core/scoring",
+    "core/stutter",
+    "core/profiles",
+    "core/journal",
+    "core/api",
+    "agents/windows-service",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Proprietary"
+rust-version = "1.82" # Option::is_none_or
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Crates internos sin features por defecto: cada miembro activa "serde" si lo necesita.
+# (Si el workspace no declara default-features = false, Cargo ignora el de los miembros.)
+model = { path = "core/model", default-features = false }
+rules = { path = "core/rules", default-features = false }
+scoring = { path = "core/scoring", default-features = false }
+stutter = { path = "core/stutter", default-features = false }
+profiles = { path = "core/profiles", default-features = false }
+journal = { path = "core/journal" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

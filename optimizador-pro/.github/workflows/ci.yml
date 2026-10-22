@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  core:
+    name: Núcleo Rust (tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --exclude optimizador-service -- -D warnings
+      - run: cargo test --workspace --exclude optimizador-service
+      # La lógica pura también debe compilar sin serde (núcleo mínimo para otras integraciones).
+      - run: cargo test -p model -p rules -p scoring -p stutter -p profiles --no-default-features
+
+  windows-service:
+    name: Servicio de Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy -p optimizador-service -- -D warnings
+      - run: cargo build -p optimizador-service --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: optimizador-service
+          path: target/release/optimizador-service.exe
+
+  flutter:
+    name: App Flutter (análisis y tests de UI)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: cargo-bins/cargo-binstall@main
+      - run: cargo binstall --no-confirm flutter_rust_bridge_codegen@2.11.1
+      - run: flutter pub get
+      - name: Generar bindings del núcleo
+        run: flutter_rust_bridge_codegen generate
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+
+  android-agent:
+    name: Agente Android (tests unitarios)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Proyecto host y tests del plugin
+        working-directory: app
+        run: |
+          # El proyecto Android está fijado en el repo; create solo añade lo que falta.
+          flutter create --platforms=android --org com.optimizadorpro --project-name optimizador_pro .
+          flutter pub get
+          # Genera gradlew y local.properties sin compilar nada.
+          flutter build apk --config-only
+          cd android
+          ./gradlew :optimizador_android_agent:testFullDebugUnitTest
+          AGENT_FLAVOR=play ./gradlew :optimizador_android_agent:testPlayDebugUnitTest

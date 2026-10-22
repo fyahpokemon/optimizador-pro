@@ -1,0 +1,15 @@
+{
+  "_comment": "Pantallas de autoinicio / batería por fabricante, en orden de preferencia. Espejo de OemIntents.kt; la app puede descargar una versión más reciente. Verificar en dispositivos reales antes de cada versión: los fabricantes cambian estas rutas.",
+  "xiaomi": ["com.miui.securitycenter/com.miui.permcenter.autostart.AutoStartManagementActivity"],
+  "huawei": ["com.huawei.systemmanager/com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity",
+             "com.huawei.systemmanager/com.huawei.systemmanager.optimize.process.ProtectActivity"],
+  "honor": ["com.hihonor.systemmanager/com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"],
+  "oppo": ["com.coloros.safecenter/com.coloros.safecenter.permission.startup.StartupAppListActivity",
+           "com.oplus.battery/com.oplus.powermanager.fuelgaue.PowerUsageModelActivity"],
+  "realme": ["com.oplus.battery/com.oplus.powermanager.fuelgaue.PowerUsageModelActivity"],
+  "oneplus": ["com.oneplus.security/com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity"],
+  "vivo": ["com.iqoo.secure/com.iqoo.secure.ui.phoneoptimize.BgStartUpManager",
+           "com.vivo.permissionmanager/com.vivo.permissionmanager.activity.BgStartUpManagerActivity"],
+  "samsung": ["com.samsung.android.lool/com.samsung.android.sm.battery.ui.BatteryActivity"],
+  "asus": ["com.asus.mobilemanager/com.asus.mobilemanager.powersaver.PowerSaverSettings"]
+}

@@ -1,0 +1,13 @@
+[package]
+name = "stutter"
+description = "Análisis de frametimes: FPS medio, 1 % bajo, tirones por minuto y regularidad"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { workspace = true, optional = true }

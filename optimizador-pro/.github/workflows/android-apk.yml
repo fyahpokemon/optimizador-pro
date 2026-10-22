@@ -1,0 +1,159 @@
+# Compila la APK de Android y la publica para instalarla directamente en el móvil.
+#
+# - Cada push a `main` (o ejecución manual en main) actualiza la pre-release «ultima».
+#   Enlace fijo de descarga:
+#   https://github.com/<usuario>/<repo>/releases/download/ultima/Optimizador-Pro.apk
+# - Cada etiqueta `vX.Y.Z` crea una Release estable con la APK de esa versión.
+# - Siempre se guarda también como artefacto del run (30 días).
+name: APK de Android
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: 'Versión del agente: full (con Shizuku) o play (solo APIs públicas)'
+        type: choice
+        options: [full, play]
+        default: full
+
+permissions:
+  contents: write # publicar la Release
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.47.7'
+  FRB_VERSION: '2.11.1'
+  AGENT_FLAVOR: ${{ inputs.flavor || 'full' }}
+
+jobs:
+  apk:
+    name: Compilar APK (${{ inputs.flavor || 'full' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Java 17 (AGP 9)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Rust con destinos Android
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: android
+
+      - uses: cargo-bins/cargo-binstall@main
+
+      - name: Herramientas (generador de bindings y cargo-ndk)
+        run: cargo binstall --no-confirm "flutter_rust_bridge_codegen@${FRB_VERSION}" cargo-ndk
+
+      - name: Proyecto Android (añade solo los archivos que falten)
+        working-directory: app
+        run: flutter create --platforms=android --org com.optimizadorpro --project-name optimizador_pro .
+
+      - name: Dependencias de Flutter
+        working-directory: app
+        run: flutter pub get
+
+      - name: Bindings Dart ↔ Rust
+        working-directory: app
+        run: flutter_rust_bridge_codegen generate
+
+      - name: Núcleo Rust para Android (arm64, arm, x86_64)
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 --platform 29 \
+            -o app/android/app/src/main/jniLibs \
+            build --release -p optimizador_core --features frb
+          ls -R app/android/app/src/main/jniLibs
+
+      - name: Clave de firma (si está configurada)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::warning title=APK firmada con clave de depuración::Instalable, pero para actualizar habrá que desinstalar antes. Ejecuta el flujo «Crear clave de firma» y guarda los secretos (ver README)."
+            exit 0
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          {
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE_PASSWORD=$KS_PASS"
+            echo "ANDROID_KEY_ALIAS=${KEY_ALIAS:-optimizador}"
+            echo "ANDROID_KEY_PASSWORD=${KEY_PASS:-$KS_PASS}"
+          } >> "$GITHUB_ENV"
+
+      - name: Versión
+        id: version
+        run: |
+          base=$(grep -E '^version:' app/pubspec.yaml | sed -E 's/^version: *([0-9.]+).*/\1/')
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then name="${GITHUB_REF_NAME#v}"; else name="$base"; fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "file=Optimizador-Pro-${name}-${AGENT_FLAVOR}.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Compilar APK
+        working-directory: app
+        run: |
+          flutter build apk --release \
+            --build-name="${{ steps.version.outputs.name }}" \
+            --build-number="${{ github.run_number }}"
+
+      - name: Preparar archivos
+        run: |
+          mkdir -p dist
+          cp app/build/app/outputs/flutter-apk/app-release.apk "dist/${{ steps.version.outputs.file }}"
+          (cd dist && sha256sum -- *.apk > SHA256SUMS.txt)
+          ls -la dist
+
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.file }}
+          path: dist/
+          retention-days: 30
+
+      - name: Publicar Release estable (etiqueta vX.Y.Z)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Optimizador Pro ${{ steps.version.outputs.name }}
+          files: dist/*
+          generate_release_notes: true
+
+      - name: Publicar «ultima» (rama main)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Nombre fijo para que el enlace de descarga no cambie nunca.
+          cp "dist/${{ steps.version.outputs.file }}" dist/Optimizador-Pro.apk
+          (cd dist && sha256sum Optimizador-Pro.apk > SHA256SUMS-ultima.txt)
+          gh release delete ultima --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+          gh release create ultima dist/Optimizador-Pro.apk dist/SHA256SUMS-ultima.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "Última compilación · ${{ steps.version.outputs.name }} (#${{ github.run_number }}, ${AGENT_FLAVOR})" \
+            --notes "APK compilada automáticamente desde \`${GITHUB_SHA::7}\`. Para instalar: descarga Optimizador-Pro.apk desde el móvil, ábrela y permite «Instalar apps desconocidas» para el navegador si te lo pide."
